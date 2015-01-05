@@ -13,5 +13,8 @@
            (zip/root (c/hiccup-zip [:div#foo])))))
   (testing "it converts class names to an attribute"
     (is (= {:tag "div" :classes ["foo" "bar"]}
-           (zip/root (c/hiccup-zip [:div.foo.bar]))))))
+           (zip/root (c/hiccup-zip [:div.foo.bar])))))
+  (testing "it merges default attribute map when it exists"
+    (is (= {:tag "div" :foo :bar :id "abc"}
+           (zip/root (c/hiccup-zip [:div#abc {:foo :bar}]))))))
 

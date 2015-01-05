@@ -4,13 +4,13 @@
 
 ; search hiccup-form [seq search steps] -> vector locations
 ; hiccup-zip
-;  * convert child nodes to child zipper
-;  * convert strings to text child (leaf)
 ;  * merge map of other properties
 
-(defn leaf? [node] false)
+(defn leaf? [node] 
+  (or (string? node) (and (vector? node) (= 1 (count node)))))
 
-(defn extract-children [node] (seq))
+(defn extract-children [node] 
+  (filterv #(or (vector? %1) (string? node)) node))
 
 (defn extract-id [elem] 
   (let [id (re-find #"#[^.#]*" elem)]
@@ -21,13 +21,17 @@
         classes (rest groups)]
     classes))
 
+(defn extract-attributes [node]
+  (reduce merge {} (conj (filter map? node) {})))
+
 (defn make-node [node children] 
   (let [elem (-> node first name)
         tag-name (re-find #"[^.#]*" elem)
         classes (extract-classes elem)
-        attributes [:tag tag-name :classes classes :id (extract-id elem)]]
-    (into {} (for [[k v] (partition 2 attributes) 
-                   :when (not (or (nil? v) (empty? v)))] [k v]))))
+        id (extract-id elem)
+        attributes {:tag tag-name :classes classes :id id}
+        attributes (merge (extract-attributes node) attributes)]
+    (into {} (filter (fn [[_ v]] (not (or (nil? v) (and (coll? v) (empty? v))))) attributes))))
 
 (defn hiccup-zip [form]
   (->> (make-node form (extract-children form))
