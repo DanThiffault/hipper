@@ -16,5 +16,8 @@
            (zip/root (c/hiccup-zip [:div.foo.bar])))))
   (testing "it merges default attribute map when it exists"
     (is (= {:tag "div" :foo :bar :id "abc"}
-           (zip/root (c/hiccup-zip [:div#abc {:foo :bar}]))))))
+           (zip/root (c/hiccup-zip [:div#abc {:foo :bar}])))))
+  (testing "it works recursively"
+    (is (= {:tag "div" :foo :bar :id "abc"}
+           (-> (c/hiccup-zip [:div [:div#abc {:foo :bar}]]) zip/down zip/node)))))
 
