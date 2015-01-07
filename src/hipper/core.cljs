@@ -4,21 +4,23 @@
 
 (def make-node)
 
-(defn leaf? [node] 
-  (or (string? node) (and (vector? node) (= 1 (count node)))))
+(def id-regex #"#[^.#]*")
+
+(def leaf? (some-fn string? 
+                    (every-pred vector? #(= 1 (count %)))))
 
 (defn extract-children [node] 
-  (filterv some?
-           (mapv #(cond (vector? %1) (make-node %1 (extract-children %1))
-                        (string? %1) %1 
-                        :else nil) node)))
+  (->> node
+      (mapv #(cond (vector? %) (make-node % (extract-children %))
+                   (string? %) % 
+                   :else nil))
+       (filterv some?)))
 
 (defn extract-id [elem] 
-  (let [id (re-find #"#[^.#]*" elem)]
-    (if (nil? id) nil (subs id 1))))
+  (some-> (re-find id-regex elem) (subs 1)))
 
 (defn extract-classes [elem] 
-  (-> elem (replace #"#[^.]*" "") (split #"\.") rest))
+  (-> elem (replace id-regex "") (split #"\.") rest))
 
 (defn extract-attributes [node]
   (let [elem (-> node first name)
@@ -26,15 +28,17 @@
         classes (extract-classes elem)
         id (extract-id elem)]
   (reduce merge {:tag tag-name :classes classes :id id} 
-          (conj (filter map? node) {}))))
+          (conj (filter map? node)))))
 
 (def not-nil-or-empty-coll?
   (complement (some-fn nil? (every-pred coll? empty?))))
 
 (defn make-node [node children] 
-  (let [attributes (merge (extract-attributes node) {:children children})]
-    (into {} (filter #(not-nil-or-empty-coll? (second %)) attributes))))
+  (->> (extract-attributes node) 
+       (merge {:children children})
+       (filter #(not-nil-or-empty-coll? (second %)))
+       (into {})))
 
 (defn hiccup-zip [form]
-  (->> (make-node form (extract-children form))
-       (zip/zipper (complement leaf?) :children make-node)))
+  (zip/zipper (complement leaf?) :children make-node 
+              (make-node form (extract-children form))))
