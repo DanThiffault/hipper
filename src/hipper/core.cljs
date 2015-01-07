@@ -1,8 +1,6 @@
 (ns hipper.core
   (:require [clojure.zip :as zip]
-            [clojure.string :refer [split]]))
-
-; search hiccup-form [seq search steps] -> vector locations
+            [clojure.string :refer [split replace]]))
 
 (def make-node)
 
@@ -20,22 +18,23 @@
     (if (nil? id) nil (subs id 1))))
 
 (defn extract-classes [elem] 
-  (let [groups (split elem #"\.")
-        classes (rest groups)]
-    classes))
+  (-> elem (replace #"#[^.]*" "") (split #"\.") rest))
 
 (defn extract-attributes [node]
-  (reduce merge {} (conj (filter map? node) {})))
-
-(defn make-node [node children] 
   (let [elem (-> node first name)
         tag-name (re-find #"[^.#]*" elem)
         classes (extract-classes elem)
-        id (extract-id elem)
-        attributes {:tag tag-name :classes classes :id id :children children}
-        attributes (merge (extract-attributes node) attributes)]
-    (into {} (filter (fn [[_ v]] (not (or (nil? v) (and (coll? v) (empty? v))))) attributes))))
+        id (extract-id elem)]
+  (reduce merge {:tag tag-name :classes classes :id id} 
+          (conj (filter map? node) {}))))
+
+(def not-nil-or-empty-coll?
+  (complement (some-fn nil? (every-pred coll? empty?))))
+
+(defn make-node [node children] 
+  (let [attributes (merge (extract-attributes node) {:children children})]
+    (into {} (filter #(not-nil-or-empty-coll? (second %)) attributes))))
 
 (defn hiccup-zip [form]
   (->> (make-node form (extract-children form))
-       (zip/zipper (comp not leaf?) :children make-node)))
+       (zip/zipper (complement leaf?) :children make-node)))

@@ -12,12 +12,22 @@
     (is (= {:tag "div" :id "foo"}
            (zip/root (c/hiccup-zip [:div#foo])))))
   (testing "it converts class names to an attribute"
-    (is (= {:tag "div" :classes ["foo" "bar"]}
-           (zip/root (c/hiccup-zip [:div.foo.bar])))))
+    (is (= {:tag "div" :classes ["foo" "bar"] :id "blah"}
+           (zip/root (c/hiccup-zip [:div.foo.bar#blah])))))
   (testing "it merges default attribute map when it exists"
     (is (= {:tag "div" :foo :bar :id "abc"}
            (zip/root (c/hiccup-zip [:div#abc {:foo :bar}])))))
   (testing "it works recursively"
     (is (= {:tag "div" :foo :bar :id "abc"}
            (-> (c/hiccup-zip [:div [:div#abc {:foo :bar}]]) zip/down zip/node)))))
+
+(deftest not-nil-or-empty-coll-test
+  (testing "it returns true for nil items"
+    (is (false? (c/not-nil-or-empty-coll? nil))))
+  (testing "it returns false for a keyword"
+    (is (true? (c/not-nil-or-empty-coll? :my-stuff))))
+  (testing "it returns false for an empty collection"
+    (is (false? (c/not-nil-or-empty-coll? '()))))
+  (testing "it returns true for a collection with items"
+    (is (true? (c/not-nil-or-empty-coll? (list :a :b :c))))))
 
