@@ -33,11 +33,15 @@
 (def not-nil-or-empty-coll?
   (complement (some-fn nil? (every-pred coll? empty?))))
 
+(defn cleanup-hiccup-node [node]
+  (->> node
+       (filter #(not-nil-or-empty-coll? (second %)))
+       (into {})))
+
 (defn make-node [node children] 
   (->> (extract-attributes node) 
        (merge {:children children})
-       (filter #(not-nil-or-empty-coll? (second %)))
-       (into {})))
+       cleanup-hiccup-node))
 
 (defn hiccup-zip [form]
   (zip/zipper (complement leaf?) :children make-node 
