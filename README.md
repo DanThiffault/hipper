@@ -5,9 +5,21 @@ A Clojurescript library to help test hiccup style forms. Unlike some other libra
 ## Usage
 
 ```clojure
+;; Check that my component has: 
+;;     a child div, 
+;;     with a child ul with an id of my-list, 
+;;     followed by some number of li with a class of special
 (deftest render-widget
   (testing "My widget has the correct number of entries"
      (is (= 5 (count (s/search (render-widget data) [:div :ul#my-list li.special]))))))
+; the above form is shorthand for:
+[child(:div) child(:ul#my-list) child(li.special)]
+
+;; Directly check that some where in the result are 5 li elements
+;; with a class of special
+(deftest render-widget
+  (testing "My widget has the correct number of entries"
+     (is (= 5 (count (s/search (render-widget data) [descendent(li.special)]))))))
 ```
 
 The forms passed to the search function have two parts: a predicate & an axis.
