@@ -6,20 +6,20 @@
 
 (deftest hiccup-zip-test
   (testing "Converts tag names to a tag attribute"
-    (is (=  {:tag "div"}
+    (is (=  [:div]
            (zip/root (c/hiccup-zip [:div])))))
   (testing "it converts id to an attribute"
-    (is (= {:tag "div" :id "foo"}
+    (is (= [:div {:id "foo"}]
            (zip/root (c/hiccup-zip [:div#foo])))))
   (testing "it converts class names to an attribute"
-    (is (= {:tag "div" :classes ["foo" "bar"] :id "blah"}
+    (is (= [:div {:classes ["foo" "bar"] :id "blah"}]
            (zip/root (c/hiccup-zip [:div.foo.bar#blah])))))
   (testing "it merges default attribute map when it exists"
-    (is (= {:tag "div" :foo :bar :id "abc"}
+    (is (= [:div {:foo :bar :id "abc"}]
            (zip/root (c/hiccup-zip [:div#abc {:foo :bar}])))))
   (testing "it works recursively"
-    (is (= {:tag "div" :foo :bar :id "abc"}
-           (-> (c/hiccup-zip [:div [:div#abc {:foo :bar}]]) zip/down zip/node)))))
+    (is (= [:div {:foo :bar :id "abc"} "My text"]
+           (-> (c/hiccup-zip [:div [:div#abc {:foo :bar} "My text"]]) zip/down zip/node)))))
 
 (deftest not-nil-or-empty-coll-test
   (testing "it returns true for nil items"

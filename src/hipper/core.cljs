@@ -6,9 +6,6 @@
 
 (def id-regex #"#[^.#]*")
 
-(def leaf? (some-fn string? 
-                    (every-pred vector? #(= 1 (count %)))))
-
 (defn extract-children [node] 
   (->> node
       (mapv #(cond (vector? %) (make-node % (extract-children %))
@@ -38,11 +35,20 @@
        (filter #(not-nil-or-empty-coll? (second %)))
        (into {})))
 
+(defn create-from-attributes [attrs] 
+  (->> (concat [(keyword (:tag attrs)) 
+        (cleanup-hiccup-node (dissoc attrs :tag :children))]
+               (:children attrs))
+       (filterv not-nil-or-empty-coll?)))
+
 (defn make-node [node children] 
   (->> (extract-attributes node) 
        (merge {:children children})
-       cleanup-hiccup-node))
+       create-from-attributes))
+
+(def branch? 
+  (every-pred sequential? (comp not-empty (partial filter sequential?))))
 
 (defn hiccup-zip [form]
-  (zip/zipper (complement leaf?) :children make-node 
+  (zip/zipper branch? extract-children make-node 
               (make-node form (extract-children form))))
